@@ -30,7 +30,8 @@ public class RobotTest {
     @Test
     public void testMove() {
         TestKit probe = new TestKit(system);
-        ActorRef robot = system.actorOf(Robot.props());
-        robot.tell(new Robot.MoveCommand(1,1), ActorRef.noSender());
+        ActorRef robot = system.actorOf(Robot.props(1));
+        robot.tell(new Robot.MoveCommand(1,1), probe.getRef());
+        probe.expectMsgClass(Robot.Moved.class);
     }
 }

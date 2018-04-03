@@ -1,10 +1,15 @@
 package com.barny.akka;
 
 import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
 import akka.actor.Props;
 
 public class Robot extends AbstractActor {
+    private final int id;
+
+    public Robot(int id) {
+        this.id = id;
+    }
+
     @Override
     public Receive createReceive() {
         return receiveBuilder()
@@ -24,11 +29,12 @@ public class Robot extends AbstractActor {
 
     public static class Moved {}
 
-    public static Props props() {
-        return Props.create(Robot.class, () -> new Robot());
+    public static Props props(int id) {
+        return Props.create(Robot.class, () -> new Robot(id));
     }
 
     private void move(MoveCommand mc) {
-        System.out.println("Moving to " + mc.x + ", " + mc.y);
+        System.out.println("Moving " + id + " to " + mc.x + ", " + mc.y);
+        getSender().tell(new Moved(), getSelf());
     }
 }
