@@ -30,7 +30,35 @@ public class CommanderTest {
 
         ActorRef commander = system.actorOf(Commander.props());
         commander.tell(new Commander.AddRobot(1), testKit.getRef());
-        testKit.expectMsgClass(Commander.RobotAdded.class);
-        assertEquals(commander, testKit.getLastSender());
+        testKit.expectMsgClass(Robot.RobotAdded.class);
+    }
+
+    @Test
+    public void testKillRobot() throws InterruptedException {
+        TestKit testKit = new TestKit(system);
+
+        ActorRef commander = system.actorOf(Commander.props());
+        commander.tell(new Commander.AddRobot(1), testKit.getRef());
+        testKit.expectMsgClass(Robot.RobotAdded.class);
+        ActorRef robot = testKit.getLastSender();
+
+        commander.tell(new Commander.AddRobot(2), testKit.getRef());
+        testKit.expectMsgClass(Robot.RobotAdded.class);
+
+        commander.tell(new Commander.GetRobotCount(), testKit.getRef());
+        Commander.RobotCount robotCount = testKit.expectMsgClass(Commander.RobotCount.class);
+        assertEquals(2, robotCount.count);
+
+        robot.tell(new Robot.Damaged(50), testKit.getRef());
+        commander.tell(new Commander.GetRobotCount(), testKit.getRef());
+        robotCount = testKit.expectMsgClass(Commander.RobotCount.class);
+        assertEquals(2, robotCount.count);
+
+        testKit.watch(robot);
+        robot.tell(new Robot.Damaged(50), testKit.getRef());
+        testKit.expectTerminated(robot);
+        commander.tell(new Commander.GetRobotCount(), testKit.getRef());
+        robotCount = testKit.expectMsgClass(Commander.RobotCount.class);
+        assertEquals(1, robotCount.count);
     }
 }
