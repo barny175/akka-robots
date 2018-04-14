@@ -14,13 +14,20 @@ public class Robot extends AbstractActor {
 
     public static class RobotAdded { }
 
+    public static class GetStatus { }
+
     @Override
     public Receive createReceive() {
         return receiveBuilder()
                 .match(MoveCommand.class, this::move)
                 .match(Damaged.class, this::damage)
                 .match(Commander.AddRobot.class, this::onAdded)
+                .match(GetStatus.class, this::onGetStatus)
                 .build();
+    }
+
+    private void onGetStatus(GetStatus msg) {
+        getSender().tell(new Status(this.damage, this.id), getSelf());
     }
 
     private void onAdded(Commander.AddRobot ar) {
@@ -77,5 +84,23 @@ public class Robot extends AbstractActor {
     private void move(MoveCommand mc) {
         System.out.println("Moving " + id + " to " + mc.x + ", " + mc.y);
         getSender().tell(new Moved(), getSelf());
+    }
+
+    public static class Status {
+        private int damage;
+        private int id;
+
+        public Status(int damage, int id) {
+            this.damage = damage;
+            this.id = id;
+        }
+
+        public int getDamage() {
+            return damage;
+        }
+
+        public int getId() {
+            return id;
+        }
     }
 }

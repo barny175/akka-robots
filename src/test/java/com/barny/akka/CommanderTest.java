@@ -7,6 +7,9 @@ import akka.testkit.javadsl.TestKit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import scala.concurrent.duration.FiniteDuration;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -60,5 +63,40 @@ public class CommanderTest {
         commander.tell(new Commander.GetRobotCount(), testKit.getRef());
         robotCount = testKit.expectMsgClass(Commander.RobotCount.class);
         assertEquals(1, robotCount.count);
+    }
+
+    @Test
+    public void testGetCompanyStatus() {
+        TestKit probe = new TestKit(system);
+
+        ActorRef com = system.actorOf(Commander.props(), "commander");
+        com.tell(new Commander.AddRobot(1), probe.getRef());
+        probe.expectMsgClass(Robot.RobotAdded.class);
+        com.tell(new Commander.AddRobot(2), probe.getRef());
+        probe.expectMsgClass(Robot.RobotAdded.class);
+
+        com.tell(new Commander.GetCompanyStatusReq(), probe.getRef());
+        GetCompanyStatus.CompanyStatus status =
+                probe.expectMsgClass(
+                        FiniteDuration.apply(10, TimeUnit.SECONDS),
+                        GetCompanyStatus.CompanyStatus.class);
+    }
+
+
+    @Test
+    public void testGetCompanyStatusTimeout() {
+        TestKit probe = new TestKit(system);
+
+        ActorRef com = system.actorOf(Commander.props(), "commander");
+        com.tell(new Commander.AddRobot(1), probe.getRef());
+        probe.expectMsgClass(Robot.RobotAdded.class);
+        com.tell(new Commander.AddRobot(2), probe.getRef());
+        probe.expectMsgClass(Robot.RobotAdded.class);
+
+        com.tell(new Commander.GetCompanyStatusReq(), probe.getRef());
+        GetCompanyStatus.CompanyStatus status =
+                probe.expectMsgClass(
+                        FiniteDuration.apply(10, TimeUnit.SECONDS),
+                        GetCompanyStatus.CompanyStatus.class);
     }
 }

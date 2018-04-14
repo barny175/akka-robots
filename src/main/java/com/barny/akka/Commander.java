@@ -5,6 +5,8 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Terminated;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,12 +24,15 @@ public class Commander extends AbstractActor {
 
     public static class GetRobotCount { }
 
+    public static class GetCompanyStatusReq { }
+
     public static class RobotCount {
         public int count;
         RobotCount(int count) {
             this.count = count;
         }
     }
+
     public static Props props() {
         return Props.create(Commander.class, () -> new Commander());
     }
@@ -37,6 +42,7 @@ public class Commander extends AbstractActor {
         return receiveBuilder()
                 .match(AddRobot.class, this::addRobot)
                 .match(GetRobotCount.class, this::getRobotoCount)
+                .match(GetCompanyStatusReq.class, this::onGetCompanyStatus)
                 .match(Terminated.class, this::onTerminated)
                 .build();
     }
@@ -54,10 +60,16 @@ public class Commander extends AbstractActor {
     }
 
     private void addRobot(AddRobot ar) {
-        ActorRef ref = getContext().actorOf(Robot.props(ar.id));
+        ActorRef ref = getContext().actorOf(Robot.props(ar.id), "robot" + ar.id);
         getContext().watch(ref);
         robots.put(ar.id, ref);
         robotToIdMappings.put(ref, ar.id);
         ref.forward(ar, getContext());
+    }
+
+    private void onGetCompanyStatus(GetCompanyStatusReq msg) {
+        Collection<ActorRef> company = Collections.unmodifiableCollection(this.robotToIdMappings.keySet());
+        ActorRef ref = getContext().actorOf(GetCompanyStatus.props(getSender(), company));
+        ref.tell(msg, getSender());
     }
 }

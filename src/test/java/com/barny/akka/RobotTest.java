@@ -34,4 +34,18 @@ public class RobotTest {
         robot.tell(new Robot.MoveCommand(1,1), probe.getRef());
         probe.expectMsgClass(Robot.Moved.class);
     }
+
+    @Test
+    public void testGetStatus() {
+        TestKit probe = new TestKit(system);
+        ActorRef ref = system.actorOf(Robot.props(1));
+        ref.tell(new Robot.GetStatus(), probe.getRef());
+        Robot.Status status = probe.expectMsgClass(Robot.Status.class);
+        assertEquals(0, status.getDamage());
+
+        ref.tell(new Robot.Damaged(10), probe.getRef());
+        ref.tell(new Robot.GetStatus(), probe.getRef());
+        status = probe.expectMsgClass(Robot.Status.class);
+        assertEquals(10, status.getDamage());
+    }
 }
